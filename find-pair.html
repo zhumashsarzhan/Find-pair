@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Find Pair</title>
+<style>
+:root{--bg:#f3f4f8;--card:#fff;--text:#1d1d2b;--accent:#5b5bd6;--ok:#2e9e5b;--shadow:0 4px 14px rgba(0,0,0,.12);
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15161d;--card:#242634;--text:#f1f1f6;--accent:#8383ff;--ok:#4cc57f;--shadow:0 4px 14px rgba(0,0,0,.5)}}
+:root[data-theme="dark"]{--bg:#15161d;--card:#242634;--text:#f1f1f6;--accent:#8383ff;--ok:#4cc57f;--shadow:0 4px 14px rgba(0,0,0,.5)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;align-items:center;justify-content:center}
+.screen{display:none;flex-direction:column;align-items:center;gap:20px;width:100%;max-width:560px;padding:16px}
+.screen.active{display:flex}
+h1{margin:0;font-size:clamp(32px,7vw,52px)}
+button{font:inherit;cursor:pointer;border:0;color:var(--text)}
+.menu-btn,.ctl{background:var(--accent);color:#fff;border-radius:14px;padding:14px 28px;font-size:20px;font-weight:600;box-shadow:var(--shadow)}
+.menu-btn{width:min(80%,320px)}
+.ctl.secondary{background:var(--card);color:var(--text)}
+.row{display:flex;gap:12px}
+#grid{display:grid;gap:12px;width:min(92vw,62vh,520px);aspect-ratio:1}
+#grid.s2{grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr)}
+#grid.s4{grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr)}
+.cell{background:var(--card);border-radius:16px;box-shadow:var(--shadow);font-size:clamp(28px,9vw,64px);display:flex;align-items:center;justify-content:center;padding:0}
+#grid.s4 .cell{font-size:clamp(22px,7vw,48px)}
+.cell.matched{outline:3px solid var(--ok)}
+#win{font-size:clamp(22px,5vw,34px);font-weight:700;color:var(--ok);min-height:1.4em;text-align:center}
+</style></head><body>
+
+<div id="main" class="screen active">
+  <h1>🧩 Find Pair</h1>
+  <p>Choose game size</p>
+  <button class="menu-btn" data-size="2">2 × 2</button>
+  <button class="menu-btn" data-size="4">4 × 4</button>
+</div>
+
+<div id="game" class="screen">
+  <div id="win"></div>
+  <div id="grid"></div>
+  <div class="row">
+    <button class="ctl secondary" id="back">← Menu</button>
+    <button class="ctl" id="restart">Restart</button>
+  </div>
+</div>
+
+<script>
+const allEmojis=["🐶","🐱","🦊","🐼","🐸","🐵","🦁","🐯","🐨","🐙","🦄","🐧","🐢","🦋","🍎","🚀"];
+let size=2,emojis=[],opened=[],matched=new Set();
+const $=id=>document.getElementById(id),grid=$("grid");
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+
+function show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("active",s.id===id))}
+
+function newGame(){
+  const n=size*size;
+  emojis=shuffle([...shuffle([...allEmojis]).slice(0,n/2).flatMap(e=>[e,e])]);
+  opened=[];matched=new Set();$("win").textContent="";
+  grid.className="s"+size;grid.innerHTML="";
+  emojis.forEach((_,i)=>{
+    const b=document.createElement("button");b.className="cell";b.setAttribute("aria-label","card "+(i+1));
+    b.onclick=()=>tap(i);grid.appendChild(b);
+  });
+}
+
+function tap(i){
+  if(matched.has(i)||opened.includes(i))return;
+  const cells=grid.children;
+  if(opened.length===2){ // 3rd click: hide the two non-matching emojis
+    opened.forEach(k=>cells[k].textContent="");
+    opened=[];
+  }
+  cells[i].textContent=emojis[i];
+  opened.push(i);
+  if(opened.length===2&&emojis[opened[0]]===emojis[opened[1]]){
+    opened.forEach(k=>{matched.add(k);cells[k].classList.add("matched")});
+    opened=[];
+  }
+  if(matched.size===emojis.length)$("win").textContent="🎉 You win! All pairs found!";
+}
+
+document.querySelectorAll("[data-size]").forEach(b=>b.onclick=()=>{size=+b.dataset.size;newGame();show("game")});
+$("restart").onclick=newGame;
+$("back").onclick=()=>show("main");
+</script></body></html>
